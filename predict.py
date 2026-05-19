@@ -2,23 +2,23 @@ import pandas as pd
 import numpy as np
 import joblib
 
-def make_prediction(team1, team2, venue, city, toss_winner, toss_decision,
+def make_prediction(team1, team2, venue, city, toss_winner, toss_decision, 
                    team1_form, team2_form, head_to_head, match_date):
     """
     Make cricket match prediction using saved model
     """
     # Load the saved model
     model = joblib.load('cricket_prediction_model.joblib')
-
+    
     # Convert date string to month
     date = pd.to_datetime(match_date)
     month = date.month
     year = date.year
-
+    
     # Calculate cyclical month features
     month_sin = np.sin(2 * np.pi * month / 12)
     month_cos = np.cos(2 * np.pi * month / 12)
-
+    
     # Create DataFrame with match details
     match_data = pd.DataFrame({
         'team_1': [team1],
@@ -35,24 +35,21 @@ def make_prediction(team1, team2, venue, city, toss_winner, toss_decision,
         'toss_bat': [1 if toss_decision == 'bat' else 0],
         'month_sin': [month_sin],
         'month_cos': [month_cos],
+        'toss_winner_won': [1]  # This will be updated after prediction
     })
-
+    
     # Make prediction
     prediction = model.predict(match_data)[0]
     probabilities = model.predict_proba(match_data)[0]
-
-    predicted_winner = team1 if prediction == 1 else team2
-
-    # Get team probabilities (class 0 is team2, class 1 is team1)
-    team_probs = {
-        team2: probabilities[0],
-        team1: probabilities[1]
-    }
-
+    
+    # Get team probabilities
+    teams = model.classes_
+    team_probs = {team: prob for team, prob in zip(teams, probabilities)}
+    
     # Sort probabilities
     sorted_probs = dict(sorted(team_probs.items(), key=lambda x: x[1], reverse=True))
-
-    return predicted_winner, sorted_probs
+    
+    return prediction, sorted_probs
 
 def main():
     # Example usage
@@ -69,7 +66,7 @@ def main():
     match_date="2023-11-19"
     )
 
-
+    
     print(f"\nPredicted Winner: {prediction}")
     print("\nWin Probabilities:")
     for team, prob in probabilities.items():

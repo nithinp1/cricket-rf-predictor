@@ -30,23 +30,22 @@ for index, row in df.iterrows():
     team1_recent = get_recent_form(team1)
     team2_recent = get_recent_form(team2)
 
-    team1_form = team1_recent.count("win") / len(team1_recent) if team1_recent else 0
-    team2_form = team2_recent.count("win") / len(team2_recent) if team2_recent else 0
+    team1_form = team1_recent.count("win") / 5 if team1_recent else 0
+    team2_form = team2_recent.count("win") / 5 if team2_recent else 0
 
     recent_form_list.append((team1_form, team2_form))
 
     # Calculate head-to-head stats
     matchup = tuple(sorted([team1, team2]))  # Ensure (A, B) and (B, A) are same
     if matchup not in head_to_head:
-        head_to_head[matchup] = {team1: 0, team2: 0}  # Track by name, not index
-
-    if winner in head_to_head[matchup]:
-        head_to_head[matchup][winner] += 1
+        head_to_head[matchup] = [0, 0]  # [wins for team1, wins for team2]
 
     if winner == team1:
+        head_to_head[matchup][0] += 1
         team_history.setdefault(team1, []).append("win")
         team_history.setdefault(team2, []).append("loss")
     elif winner == team2:
+        head_to_head[matchup][1] += 1
         team_history.setdefault(team1, []).append("loss")
         team_history.setdefault(team2, []).append("win")
     else:  # In case of no winner recorded
@@ -54,8 +53,8 @@ for index, row in df.iterrows():
         team_history.setdefault(team2, []).append("draw")
 
     # Store head-to-head win ratio for team1
-    total_matches = head_to_head[matchup][team1] + head_to_head[matchup][team2]
-    team1_head_to_head = head_to_head[matchup][team1] / total_matches if total_matches > 0 else 0
+    total_matches = sum(head_to_head[matchup])
+    team1_head_to_head = head_to_head[matchup][0] / total_matches if total_matches > 0 else 0
     head_to_head_list.append(team1_head_to_head)
 
 # Add new features to DataFrame
