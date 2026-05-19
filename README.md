@@ -10,7 +10,6 @@ A machine learning project that predicts the outcome of cricket matches using a 
 * [Model Training](#model-training)
 * [Evaluation](#evaluation)
    * [Confusion Matrix](#confusion-matrix)
-* [Contributing](#contributing)
 * [License](#license)
 
 ## Project Overview
@@ -42,24 +41,35 @@ cd cricket-rf-predictor
 2. Create a virtual environment and install dependencies:
 
 ```bash
-python -m venv env
+virtualenv env
 source env/bin/activate  # On Windows use `env\Scripts\activate`
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-1. Ensure the processed CSV data is placed in the `data/` directory.
-2. Run the model training script:
+1. Run the raw data parsing script to convert json data:
 
 ```bash
-python train_model.py --data_path data/cricket_matches.csv --output_dir models/
+python parse_data.py
 ```
 
-3. To make predictions for future matches:
+2. Process the data and compute stats:
 
 ```bash
-python predict_match.py --model_path models/cricket_prediction_model.joblib --match_data examples/new_match.csv
+python process_data.py
+```
+
+3. Run the model training script:
+
+```bash
+python create_cricket_model.py
+```
+
+4. To make predictions for future matches:
+
+```bash
+python predict.py
 ```
 
 ## Model Training
@@ -94,46 +104,27 @@ The model is evaluated using standard classification metrics:
 
 ### Confusion Matrix
 
-![Confusion Matrix](results/confusion_matrix.png)
+![Confusion Matrix](confusion_matrix.png)
 
-The confusion matrix visualizes the model's performance across different teams, showing how well it predicts each team's wins.
+The confusion matrix visualizes the model's performance as a binary classifier, comparing the true match outcomes against its predicted outcomes (Team 1 vs Team 2).
 
 ## Example Prediction Code
 
 ```python
-import pandas as pd
-import joblib
+from predict import make_prediction
 
-# Load the trained model
-model = joblib.load('models/cricket_prediction_model.joblib')
+prediction, probabilities = make_prediction(
+    team1="India",
+    team2="Australia",
+    venue="Narendra Modi Stadium",
+    city="Ahmedabad",
+    toss_winner="Australia",
+    toss_decision="field",
+    team1_form=0.90,
+    team2_form=0.80,
+    head_to_head=0.45,
+    match_date="2023-11-19"
+)
 
-# Create data for a new match
-new_match = pd.DataFrame({
-    'venue': ['Lords Cricket Ground'],
-    'city': ['London'],
-    'toss_winner': ['England'],
-    'toss_decision': ['bat'],
-    'year': [2025],
-    'month': [6],
-    'toss_bat': [1],
-    'month_sin': [0.5],
-    'month_cos': [0.866],
-    'toss_winner_won': [0]
-})
-
-# Make prediction
-prediction = model.predict(new_match)
-probabilities = model.predict_proba(new_match)
-
-print(f"Predicted winner: {prediction[0]}")
+print(f"Predicted winner: {prediction}")
 ```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
